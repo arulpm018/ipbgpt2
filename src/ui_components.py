@@ -32,10 +32,12 @@ def display_sidebar():
             st.session_state['number'] = new_number
             if st.session_state.get('prompt'):
                 st.session_state['related_document'] = get_related_documents(st.session_state['prompt'])
+                st.session_state['selected_document'] = []  # Reset selected documents
         
         if text_input and (st.session_state.get('prompt') != text_input or 'related_document' not in st.session_state):
             st.session_state['prompt'] = text_input
             st.session_state['related_document'] = get_related_documents(text_input)
+            st.session_state['selected_document'] = []  # Reset selected documents
 
         display_retrieved_documents()
 
