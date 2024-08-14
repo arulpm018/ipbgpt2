@@ -31,13 +31,21 @@ def display_sidebar():
         if new_number != st.session_state['number']:
             st.session_state['number'] = new_number
             if st.session_state.get('prompt'):
-                st.session_state['related_document'] = get_related_documents(st.session_state['prompt'])
-                st.session_state['selected_document'] = []  # Reset selected documents
+                related_docs = get_related_documents(st.session_state['prompt'])
+                if 'error' in related_docs:
+                    st.error(related_docs['error'])
+                else:
+                    st.session_state['related_document'] = related_docs
+                    st.session_state['selected_document'] = []  # Reset selected documents
         
         if text_input and (st.session_state.get('prompt') != text_input or 'related_document' not in st.session_state):
             st.session_state['prompt'] = text_input
-            st.session_state['related_document'] = get_related_documents(text_input)
-            st.session_state['selected_document'] = []  # Reset selected documents
+            related_docs = get_related_documents(text_input)
+            if 'error' in related_docs:
+                st.error(related_docs['error'])
+            else:
+                st.session_state['related_document'] = related_docs
+                st.session_state['selected_document'] = []  # Reset selected documents
 
         display_retrieved_documents()
 
@@ -78,9 +86,13 @@ def display_chat_interface():
     if st.session_state.get('current_file') != st.session_state['uploaded_file']:
         if st.session_state['uploaded_file']:
             with st.spinner("Processing uploaded PDF. Please wait..."):
-                upload_pdf(st.session_state['uploaded_file'])
-            st.session_state['current_file'] = st.session_state['uploaded_file']
-            st.success("PDF processed successfully!")
+                result = upload_pdf(st.session_state['uploaded_file'])
+                if 'error' in result:
+                    st.error(result['error'])
+                else:
+                    st.session_state['current_file'] = st.session_state['uploaded_file']
+                    st.success("PDF processed successfully!")
+
 
     chat_enabled = st.session_state['uploaded_file'] is not None or st.session_state['selected_document']
 
@@ -137,7 +149,9 @@ def generate_response(prompt, is_continuation=False):
             previous_response = st.session_state.messages[-1]["content"] if is_continuation else ""
             response = process_selected_documents_chat(prompt, previous_response)
         
-        if not is_continuation:
+        if response.startswith("Server not ready") or response.startswith("Failed to"):
+            st.error(response)
+        elif not is_continuation:
             st.session_state.messages.append({"role": "assistant", "content": response})
         
         return response
