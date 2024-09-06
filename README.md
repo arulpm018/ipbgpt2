@@ -1,1 +1,1 @@
-# ipbgpt2
+# IPBGPT
